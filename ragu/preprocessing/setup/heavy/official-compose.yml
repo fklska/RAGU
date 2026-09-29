@@ -6,7 +6,6 @@ services:
     image: mineru:4
     container_name: mineru-openai-server
     restart: always
-    profiles: ["openai-server"]
     ports:
       - 30000:30000
     environment:
@@ -48,7 +47,7 @@ services:
       - --port
       - "8000"
       - --vlm-server-url
-      - http://127:0.0.1:30000/v1
+      - http://mineru-openai-server:30000/v1
     ulimits:
       memlock: -1
       stack: 67108864

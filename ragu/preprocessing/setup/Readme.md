@@ -9,7 +9,7 @@
 - vLLM (custom) - Снизить `max_num_seq`, `max_cudagraph_capture_size`, `fp8 kv-cache` (UPD: Проверю и добавлю compose.yml позже)
 
 # Как запустить?
-Нужно сбилдить нужный вам образ: easy - llama-cpp; hard - vllm. Соответственно llama.cpp намного легче, для локального запуска, но медленнее. После билда проверить название образа и запустить `docker compose up -d`
+Нужно сбилдить нужный вам образ: easy - llama-cpp; heavy - vllm. Соответственно llama.cpp намного легче, для локального запуска, но медленнее. После билда проверить название образа и запустить `docker compose up -d`, в heavy есть 2 compose файла 1 который был в документации, 2 более гибкий в настройке vLLM
 
 Образ с vllm я сбилдил - `docker pull fklska/mineru:4.0`
 

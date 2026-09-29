@@ -58,6 +58,7 @@ local = [
     "sentence-transformers>=5.1.1,<6",
     "transformers>=4.57.1,<5",
     "smart-chunker>=0.0.5,<0.1",
+    "mineru>=4.0,<5",
 ]
 
 test = [
