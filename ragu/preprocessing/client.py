@@ -1,8 +1,9 @@
+from collections.abc import Collection
 from pathlib import Path
-from collections.abc import Awaitable, Collection, MutableMapping
-from mineru.parser import MinerUApiParser, ParseResult
-from tqdm import tqdm
+
+from mineru.parser import MinerUApiParser
 from mineru.parser.writer import FileBasedDataWriter
+from tqdm import tqdm
 
 parser = MinerUApiParser(
     api_url="http://127.0.0.1:8000",
@@ -17,7 +18,6 @@ def parse_from_folder(folder: str, result_folder: str, file_extensions: Collecti
     result = Path(result_folder)
 
     for f in tqdm(sorted(data.rglob("*"))):
-        print(f)
         if not f.is_file() or f.suffix.lower() not in file_extensions:
             continue
         try:
