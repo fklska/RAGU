@@ -17,6 +17,7 @@ def parse_from_folder(folder: str, result_folder: str, file_extensions: Collecti
     result = Path(result_folder)
 
     for f in tqdm(sorted(data.rglob("*"))):
+        print(f)
         if not f.is_file() or f.suffix.lower() not in file_extensions:
             continue
         try:
@@ -29,3 +30,5 @@ def parse_from_folder(folder: str, result_folder: str, file_extensions: Collecti
         except Exception as e:
             print(f, e, flush=True)
             
+#if __name__ == "__main__":
+#    parse_from_folder("ragu/preprocessing/data", "ragu/preprocessing/result", {".html"})
