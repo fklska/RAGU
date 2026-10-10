@@ -119,6 +119,18 @@ async def main():
 asyncio.run(main())
 ```
 
+### MarkdownChunker, RecursiveMarkdownChunker, SemanticMarkdownChunker
+
+Chunkers for MinerU Markdown in `ragu.chunker.markdown_chunkers` (require `chonkie`; the semantic one also `sentence-transformers`).
+
+- Tables, display formulas, code and images are cut out of the text into `TableChunk`, `FormulaChunk`, `CodeChunk` and `ImageChunk`.
+- The rest is divided into sections by `#` / `##` headings and split by chonkie `RecursiveChunker` or `SemanticChunker` into `TextChunk`.
+- `metadata`: `document_title` and `section`; objects also get `caption` (from `structured_content.json`) and `description`.
+- `to_embed()` returns the text for the embedding model, `to_llm()` the text for the answer context.
+- `Document.from_mineru(folder)` loads `markdown.md` and `structured_content.json`.
+
+Example: [`examples/markdown_chunking_example.ipynb`](../../examples/markdown_chunking_example.ipynb).
+
 ## Data Flow
 
 Input: `str` or `list[str]` documents.
