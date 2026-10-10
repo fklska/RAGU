@@ -89,11 +89,21 @@ class TableChunk(ObjectChunk):
     def summary(self) -> str:
         return table_text(self.content)
 
+    def to_embed(self) -> str:
+        # TODO 
+        return "TABLE DESCRIPTION"
+    
+
 
 @dataclass(slots=True)
 class FormulaChunk(ObjectChunk):
     def body(self) -> str:
         return f"$$\n{self.content}\n$$"
+
+    def to_embed(self) -> str:
+        # TODO 
+        return "FORMULA DESCRIPTION"
+    
 
 
 @dataclass(slots=True)
@@ -104,6 +114,11 @@ class CodeChunk(ObjectChunk):
     def body(self) -> str:
         return f"```{self.metadata.get('language', '')}\n{self.content}\n```"
 
+    def to_embed(self) -> str:
+        # TODO 
+        return "CODE DESCRIPTION"
+
+
 
 @dataclass(slots=True)
 class ImageChunk(ObjectChunk):
@@ -113,3 +128,7 @@ class ImageChunk(ObjectChunk):
     def body(self) -> str:
         description = self.metadata.get("description", "")
         return "" if description in (self.metadata.get("caption"), self.metadata.get("section")) else description
+    
+    def to_embed(self) -> str:
+        # TODO 
+        return "IMAGE DESCRIPTION"
