@@ -1,10 +1,15 @@
 __version__ = "0.0.5"
 
 # Default chunkers
-from ragu.chunker import SimpleChunker, SmartSemanticChunker
+from ragu.chunker import (
+    SimpleChunker, SmartSemanticChunker,
+    Chunk, Document, TextChunk, ObjectChunk, TableChunk, FormulaChunk, CodeChunk, ImageChunk,
+    MarkdownChunker, RecursiveMarkdownChunker, SemanticMarkdownChunker,
+)
 
 # Knowledge Graph and builders
 from ragu.graph.knowledge_graph import KnowledgeGraph
+from ragu.graph.metanodes import NearbyRelationExtractor
 from ragu.graph.graph_builder_pipeline import InMemoryGraphBuilder, BuilderArguments
 from ragu.graph.graph_retrieve_backend import GraphRetriever
 from ragu.graph.index import StorageArguments
@@ -30,7 +35,6 @@ from ragu.search_engine import (
 from ragu.triplet import (
     ArtifactsExtractorLLM,
     TwoStageArtifactsExtractorLLM,
-    RaguLmArtifactExtractor
 )
 
 
@@ -49,7 +53,6 @@ __all__ = [
     "SearchEngineStreamEvent",
     "ArtifactsExtractorLLM",
     "TwoStageArtifactsExtractorLLM",
-    "RaguLmArtifactExtractor",
     "Env",
     "Settings",
     "CachedAsyncOpenAI",
@@ -57,4 +60,6 @@ __all__ = [
     "LLMOpenAI",
     "SimpleChunker",
     "SmartSemanticChunker",
+    "Chunk", "Document", "TextChunk", "ObjectChunk", "TableChunk", "FormulaChunk", "CodeChunk", "ImageChunk",
+    "MarkdownChunker", "RecursiveMarkdownChunker", "SemanticMarkdownChunker", "NearbyRelationExtractor",
 ]

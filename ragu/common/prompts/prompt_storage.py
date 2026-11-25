@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from ragu.common.prompts.default_models import (
     ArtifactsModel,
+    RelationsExtractionModel,
     CommunityReportModel,
     GlobalSearchContextModel,
     EntityDescriptionModel,
@@ -29,14 +30,13 @@ from ragu.common.prompts.default_templates import (
     DEFAULT_GLOBAL_SEARCH_CONTEXT_PROMPT,
     DEFAULT_GLOBAL_SEARCH_PROMPT,
     DEFAULT_CLUSTER_SUMMARIZER_PROMPT,
-    DEFAULT_RAGU_LM_ENTITY_EXTRACTION_PROMPT,
-    DEFAULT_RAGU_LM_ENTITY_NORMALIZATION_PROMPT,
-    DEFAULT_RAGU_LM_ENTITY_DESCRIPTION_PROMPT,
-    DEFAULT_RAGU_LM_RELATION_DESCRIPTION_PROMPT,
     DEFAULT_QUERY_DECOMPOSITION_PROMPT,
     DEFAULT_QUERY_REWRITE_PROMPT,
-    DEFAULT_RAGU_LM_SYSTEM_PROMPT,
     DEFAULT_OBJECT_DESCRIPTION_PROMPT,
+    DEFAULT_TABLE_RELATIONS_PROMPT,
+    DEFAULT_TABLE_RELATIONS_USER_PROMPT,
+    DEFAULT_FORMULA_RELATIONS_PROMPT,
+    DEFAULT_FORMULA_RELATIONS_USER_PROMPT,
 )
 from ragu.common.prompts.few_shot import (
     FewShotFormatter,
@@ -223,50 +223,6 @@ DEFAULT_PROMPT_TEMPLATES: dict[str, RAGUInstruction] = {
         description=None,
     ),
 
-    "ragu_lm_entity_extraction": RAGUInstruction(
-        messages=ChatMessages.from_messages(
-            [
-                SystemMessage(content=DEFAULT_RAGU_LM_SYSTEM_PROMPT),
-                UserMessage(content=DEFAULT_RAGU_LM_ENTITY_EXTRACTION_PROMPT),
-            ]
-        ),
-        pydantic_model=str,
-        description="Instruction for RAGU-lm entity extraction stage.",
-    ),
-
-    "ragu_lm_entity_normalization": RAGUInstruction(
-        messages=ChatMessages.from_messages(
-            [
-                SystemMessage(content=DEFAULT_RAGU_LM_SYSTEM_PROMPT),
-                UserMessage(content=DEFAULT_RAGU_LM_ENTITY_NORMALIZATION_PROMPT),
-            ]
-        ),
-        pydantic_model=str,
-        description="Instruction for RAGU-lm entity normalization stage.",
-    ),
-
-    "ragu_lm_entity_description": RAGUInstruction(
-        messages=ChatMessages.from_messages(
-            [
-                SystemMessage(content=DEFAULT_RAGU_LM_SYSTEM_PROMPT),
-                UserMessage(content=DEFAULT_RAGU_LM_ENTITY_DESCRIPTION_PROMPT),
-            ]
-        ),
-        pydantic_model=str,
-        description="Instruction for RAGU-lm entity description stage.",
-    ),
-
-    "ragu_lm_relation_description": RAGUInstruction(
-        messages=ChatMessages.from_messages(
-            [
-                SystemMessage(content=DEFAULT_RAGU_LM_SYSTEM_PROMPT),
-                UserMessage(content=DEFAULT_RAGU_LM_RELATION_DESCRIPTION_PROMPT),
-            ]
-        ),
-        pydantic_model=str,
-        description="Instruction for RAGU-lm relation description stage.",
-    ),
-
     "query_decomposition": RAGUInstruction(
         messages=ChatMessages.from_messages(
             [
@@ -296,4 +252,21 @@ DEFAULT_PROMPT_TEMPLATES: dict[str, RAGUInstruction] = {
         pydantic_model=str,
         description="Prompt for describing tables, formulas, code blocks and images extracted by the Markdown chunker.",
     ),
+    "table_relations": RAGUInstruction(
+        messages=ChatMessages.from_messages([
+            SystemMessage(content=DEFAULT_TABLE_RELATIONS_PROMPT),
+            UserMessage(content=DEFAULT_TABLE_RELATIONS_USER_PROMPT),
+        ]),
+        pydantic_model=RelationsExtractionModel,
+        description="Links one table to known entities using text before and after it.",
+    ),
+    "formula_relations": RAGUInstruction(
+        messages=ChatMessages.from_messages([
+            SystemMessage(content=DEFAULT_FORMULA_RELATIONS_PROMPT),
+            UserMessage(content=DEFAULT_FORMULA_RELATIONS_USER_PROMPT),
+        ]),
+        pydantic_model=RelationsExtractionModel,
+        description="Links one formula to known entities using text before and after it.",
+    ),
+
 }

@@ -127,11 +127,12 @@ Chunkers for MinerU Markdown in `ragu.chunker.markdown_chunkers` (require `chonk
 - The rest is divided into sections by `#` / `##` headings and split by chonkie `RecursiveChunker` or `SemanticChunker` into `TextChunk`.
 - `metadata`: `document_title` and `section`; objects also get `caption` (from `structured_content.json`) and `description`.
 - `to_embed()` returns the text for the embedding model, `to_llm()` the text for the answer context.
-- Chunks keep the document order: an object follows the text chunk it stood in.
+- Chunks keep the document order: text is split independently before and after each object.
 - `split()` writes a placeholder `description`; `await a_split()` with `llm=` generates it with the model (images are sent as pictures).
+- Local images attached during `a_split()` must resolve inside the document folder, including symlink targets; paths outside it raise `ValueError`. Missing images use a text-only request.
 - `Document.from_mineru(folder)` loads `markdown.md` and `structured_content.json`.
 
-Example: [`examples/markdown_chunking_example.ipynb`](../../examples/markdown_chunking_example.ipynb).
+Example: [`examples/markdown_chunking_example.ipynb`](../../examples/preprocessing/markdown_chunking_example.ipynb).
 
 ## Data Flow
 
@@ -236,3 +237,20 @@ External:
 - `doc_id` is currently derived from the whole document hash inside chunkers.
 - `SimpleChunker.max_chunk_size` is measured in characters, not tokens.
 - Semantic chunkers load local ML models and may require GPU-compatible configuration.
+
+### Typed chunk persistence
+
+`Chunk.to_dict()` / `Chunk.from_dict()` preserve the chunk ID, concrete type,
+source references and metadata. Untyped legacy records load as `Chunk`.
+Markdown object IDs depend on the document, object type and content; identical objects in one document share an ID.
+`BaseChunker.a_split(documents)` provides the async pipeline entry point.
+Its default implementation delegates string batches to `split()`. It splits
+`Document` inputs individually and preserves their document IDs; subclasses
+override it when they need asynchronous operations, such as LLM calls.
+The graph filters previously processed documents before calling the chunker;
+chunkers do not accept or manage storage identifiers.
+Public document and chunk types and Markdown chunkers are exported from
+`ragu.chunker` and `ragu`.
+
+For tables and formulas represented as graph entities, see
+[table and formula metanodes](../graph/README.md#table-and-formula-metanodes).

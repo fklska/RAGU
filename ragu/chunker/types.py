@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +9,16 @@ from ragu.utils.ragu_utils import compute_mdhash_id
 
 @dataclass(slots=True)
 class Document:
+    """
+    Markdown content with optional MinerU structure and a folder for local images.
+
+    :param content: Markdown content.
+    :param structured_content: Optional MinerU structure containing metadata and captions.
+    :param title: Document title; inferred from metadata or Markdown if omitted.
+    :param id: Document ID; derived from content when set to ``"auto"``.
+    :param folder: Base folder for local image attachments.
+    """
+
     content: str
     structured_content: dict[str, Any] | None = None
     title: str | None = None
@@ -23,6 +33,12 @@ class Document:
 
     @classmethod
     def from_mineru(cls, folder: str | Path) -> "Document":
+        """
+        Load MinerU Markdown and optional structured content from a result folder.
+
+        :param folder: Folder containing ``markdown.md`` and optional ``structured_content.json``.
+        :return: Document with content, metadata and the image base folder.
+        """
         structure = Path(folder) / "structured_content.json"
         return cls(
             (Path(folder) / "markdown.md").read_text(encoding="utf-8"),
@@ -33,6 +49,16 @@ class Document:
 
 @dataclass(slots=True)
 class Chunk:
+    """
+    A text fragment with a deterministic ID and source document reference.
+
+    :param content: Chunk content.
+    :param chunk_order_idx: Zero-based position within the source document.
+    :param doc_id: Source document ID.
+    :param num_tokens: Optional token count.
+    :param metadata: Additional document, section or object metadata.
+    """
+
     id: str = field(init=False)
     content: str
     chunk_order_idx: int
@@ -43,15 +69,58 @@ class Chunk:
     def __post_init__(self) -> None:
         self.id = compute_mdhash_id(self.content, prefix="chunk-")
 
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serialize a typed chunk without losing its identifier.
+
+        :return: Payload containing the chunk type and all dataclass fields.
+        """
+        return {**asdict(self), "chunk_type": type(self).__name__}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], chunk_id: str | None = None) -> "Chunk":
+        """
+        Restore a chunk, including legacy payloads without a type discriminator.
+
+        :param data: Stored chunk payload.
+        :param chunk_id: Storage key, authoritative for legacy identifiers.
+        :return: Reconstructed chunk with its persisted ID.
+        :raises ValueError: If the stored chunk type is unknown.
+        """
+        payload = dict(data)
+        kind = payload.pop("chunk_type", "Chunk")
+        stored_id = payload.pop("id", None)
+        classes = {c.__name__: c for c in (Chunk, TextChunk, ObjectChunk, TableChunk, FormulaChunk, CodeChunk, ImageChunk)}
+        if kind not in classes:
+            raise ValueError(f"Unknown chunk type: {kind}")
+        chunk = classes[kind](**payload)
+        if chunk_id is not None or stored_id is not None:
+            chunk.id = chunk_id if chunk_id is not None else stored_id
+        return chunk
+
     def to_embed(self) -> str:
+        """
+        Return the text representation used for vectorization.
+
+        :return: Text to embed.
+        """
         return self.content
 
     def to_llm(self) -> str:
+        """
+        Return the text representation used in answer context.
+
+        :return: Text to include in the LLM context.
+        """
         return self.content
 
 
 @dataclass(slots=True)
 class TextChunk(Chunk):
+    """
+    Plain text with section context for embedding and answer generation.
+    """
+
     def __post_init__(self) -> None:
         self.id = typed_id(self)
 
@@ -64,11 +133,19 @@ class TextChunk(Chunk):
 
 @dataclass(slots=True)
 class ObjectChunk(Chunk):
+    """
+    A Markdown object with a local fallback or LLM-generated description.
+    """
+
     def __post_init__(self) -> None:
         self.id = typed_id(self)
 
     def describe(self) -> str:
-        # NOTE: placeholder; MarkdownChunker.a_split replaces it with an LLM description
+        """
+        Store a fallback description that async chunking may replace with LLM output.
+
+        :return: Description stored in the chunk metadata.
+        """
         description = join(self.metadata.get("caption"), self.summary()) or self.metadata.get("section") or self.content
         self.metadata["description"] = description
         return description
@@ -88,18 +165,30 @@ class ObjectChunk(Chunk):
 
 @dataclass(slots=True)
 class TableChunk(ObjectChunk):
+    """
+    A Markdown or HTML table with a compact plain-text summary.
+    """
+
     def summary(self) -> str:
         return table_text(self.content)
 
 
 @dataclass(slots=True)
 class FormulaChunk(ObjectChunk):
+    """
+    A display equation whose LaTeX delimiters are restored for the LLM.
+    """
+
     def body(self) -> str:
         return f"$$\n{self.content}\n$$"
 
 
 @dataclass(slots=True)
 class CodeChunk(ObjectChunk):
+    """
+    A code block with its language and Markdown representation.
+    """
+
     def summary(self) -> str:
         return shorten(self.content)
 
@@ -109,6 +198,10 @@ class CodeChunk(ObjectChunk):
 
 @dataclass(slots=True)
 class ImageChunk(ObjectChunk):
+    """
+    An image path whose description supplies textual answer context.
+    """
+
     def summary(self) -> str:
         return ""
 
