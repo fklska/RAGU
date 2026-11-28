@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from ragu.chunker.types import Chunk
 from ragu.graph.artifacts_summarizer import RelationSummarizer
 from ragu.graph.entity_alignment import EntityAligner
@@ -10,10 +12,12 @@ from ragu.graph.graph_builder_pipeline import (
 )
 from ragu.graph.knowledge_graph import KnowledgeGraph
 from ragu.graph.types import Entity, Relation
+from ragu.models.decision_client import DecisionClient
 from ragu.models.decisions import (
     EntityDecider,
     EntityDecision,
     EntityDecisionBatch,
+    FridaEntityDecider,
     LLMEntityAlignmentDecider,
 )
 from ragu.models.embedder import Embedder
@@ -379,3 +383,71 @@ async def test_llm_decider_uses_structured_output():
     kwargs = llm.chat_completion.await_args.kwargs
     assert kwargs["output_schema"] is EntityDecisionBatch
     assert candidate.id in str(kwargs["conversation"])
+
+
+async def test_frida_decider_uses_noul_questions_and_threshold():
+    source = make_entity("Ivan Petrov")
+    candidates = [make_entity("I. Petrov"), make_entity("Ivan Petrovich")]
+    client = AsyncMock(spec=DecisionClient)
+    client.decide.return_value = {
+        "answers": {
+            "same_entity_0": {"type": "noul", "noul": 0.8},
+            "same_entity_1": {"type": "noul", "noul": 0.2},
+        }
+    }
+    decider = FridaEntityDecider(client, threshold=0.75)
+
+    assert await decider.decide(source, []) == []
+    client.decide.assert_not_awaited()
+
+    decisions = await decider.decide(source, candidates)
+
+    assert [decision.same_entity for decision in decisions] == [True, False]
+    request = client.decide.await_args.args[0]
+    assert request["state"]["source_entity"]["id"] == source.id
+    assert len(request["state"]["candidate_entities"]) == 2
+    assert list(request["questions"]) == ["same_entity_0", "same_entity_1"]
+    assert all(
+        question["type"] == "noul"
+        for question in request["questions"].values()
+    )
+
+
+async def test_frida_decider_rejects_invalid_response_and_threshold():
+    with pytest.raises(ValueError, match="threshold must be between"):
+        FridaEntityDecider(AsyncMock(spec=DecisionClient), threshold=1.1)
+
+    client = AsyncMock(spec=DecisionClient)
+    client.decide.return_value = {
+        "answers": {"same_entity_0": {"type": "noul", "noul": 1.2}}
+    }
+    decider = FridaEntityDecider(client)
+
+    with pytest.raises(ValueError, match="Invalid noul probability"):
+        await decider.decide(make_entity("Alice"), [make_entity("A. Smith")])
+
+
+async def test_frida_decider_connects_to_entity_aligner():
+    entities = [
+        make_entity("Alice"),
+        make_entity("Alice Smith"),
+        make_entity("Bob"),
+    ]
+    client = AsyncMock(spec=DecisionClient)
+    client.decide.side_effect = lambda request: {
+        "answers": {
+            key: {"type": "noul", "noul": 1.0}
+            for key in request["questions"]
+        }
+    }
+    aligner = EntityAligner(
+        DummyEmbedder(),
+        FridaEntityDecider(client),
+    )
+
+    aligned, _ = await aligner.run(entities, [])
+
+    assert len(aligned) == 2
+    assert {entity.entity_name for entity in aligned} == {"Alice Smith", "Bob"}
+    assert client.decide.await_count == 2
+    assert aligner.last_report.decision_calls == 2
