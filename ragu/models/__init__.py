@@ -1,17 +1,22 @@
-from ragu.models.llm import LLM, LLMOpenAI
+from ragu.models.caching import ResponseCachingMixin
+from ragu.models.decision_client import (
+    DecisionClient,
+    HTTPDecisionClient,
+)
 from ragu.models.embedder import Embedder, EmbedderOpenAI
+from ragu.models.llm import LLM, LLMOpenAI
 from ragu.models.openai import CachedAsyncOpenAI
 from ragu.models.scorer import Scorer, ScorerOpenAI
-from ragu.models.caching import ResponseCachingMixin
-
 
 __all__ = [
     'LLM',
-    'LLMOpenAI',
+    'CachedAsyncOpenAI',
+    'DecisionClient',
     'Embedder',
     'EmbedderOpenAI',
-    'CachedAsyncOpenAI',
+    'HTTPDecisionClient',
+    'LLMOpenAI',
+    'ResponseCachingMixin',
     'Scorer',
     'ScorerOpenAI',
-    'ResponseCachingMixin',
 ]

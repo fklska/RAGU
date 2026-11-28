@@ -124,6 +124,8 @@ class InMemoryGraphBuilder:
     :param additional_pipeline: Optional post-processing modules executed after
         extraction/summarization.
     :param language: Working language for prompts and generation.
+    :param entity_aligner: Optional in-memory entity alignment module executed
+        before relation summarization.
     """
 
     def __init__(
@@ -134,12 +136,14 @@ class InMemoryGraphBuilder:
         artifact_extractor: BaseArtifactExtractor | None = None,
         build_parameters: BuilderArguments = BuilderArguments(),
         additional_pipeline: List[GraphBuilderModule] | None = None,
-        language: str | None = None
+        language: str | None = None,
+        entity_aligner: GraphBuilderModule | None = None,
     ):
         self.llm = llm
         self.chunker = chunker
         self.artifact_extractor = artifact_extractor
         self.additional_pipeline = additional_pipeline
+        self.entity_aligner = entity_aligner
         self.embedder = embedder
         self.language = language if language else Settings.language
         self.build_parameters = build_parameters
@@ -213,6 +217,15 @@ class InMemoryGraphBuilder:
 
         # Step 2: summarize similar artifacts' descriptions
         entities = await self.entity_summarizer.run(entities) # type: ignore[union-attr]
+        if self.entity_aligner is not None:
+            module_output = await self.entity_aligner.run(entities, relations)
+            if not isinstance(module_output, tuple) or len(module_output) != 2:
+                module_name = type(self.entity_aligner).__name__
+                raise TypeError(
+                    f"Graph builder module {module_name} must return an "
+                    f"(entities, relations) tuple, got {type(module_output).__name__}."
+                )
+            entities, relations = module_output
         relations = await self.relation_summarizer.run(relations) # type: ignore[union-attr]
 
         metanodes, nearby_relations = await self.nearby_relation_extractor.a_extract_nearby(

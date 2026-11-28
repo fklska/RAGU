@@ -198,6 +198,7 @@ class KnowledgeGraph:
     :param storage_settings: Storage backend configuration. Defaults are used if omitted.
     :param additional_modules: Optional post-processing modules for extracted graph items.
     :param language: Optional language override. Defaults to ``Settings.language``.
+    :param entity_aligner: Optional alignment module for the current extraction batch.
     """
 
     def __init__(
@@ -211,6 +212,7 @@ class KnowledgeGraph:
         storage_settings: Optional[StorageArguments] = None,
         additional_modules: Optional[List[GraphBuilderModule]] = None,
         language: Optional[str] = None,
+        entity_aligner: Optional[GraphBuilderModule] = None,
     ):
         """
         Initialize KnowledgeGraph with pipeline and storage components.
@@ -224,6 +226,7 @@ class KnowledgeGraph:
         :param storage_settings: Optional storage backend settings.
         :param additional_modules: Optional post-processing modules for graph items.
         :param language: Optional language override. Defaults to ``Settings.language``.
+        :param entity_aligner: Optional alignment module for the current extraction batch.
         """
         self.builder_settings = builder_settings or BuilderArguments()
         self.storage_settings = storage_settings or StorageArguments()
@@ -245,6 +248,7 @@ class KnowledgeGraph:
             embedder=embedder,
             additional_pipeline=what_to_add,
             language=self.language,
+            entity_aligner=entity_aligner,
         )
         # Store graph
         self.index: Index = Index(
@@ -408,9 +412,9 @@ class KnowledgeGraph:
 
     async def delete_entities(self, entity_ids: List[str]) -> "KnowledgeGraph":
         """
-        Delete an entity from the knowledge graph.
+        Delete one or more entities from the knowledge graph.
 
-        :param entity_ids: ID of the entity to delete.
+        :param entity_ids: Entity identifiers to delete.
         :return: Self for method chaining.
         """
         await self.index.delete_nodes(entity_ids)
