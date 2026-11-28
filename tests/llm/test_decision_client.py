@@ -3,10 +3,7 @@ import json
 import httpx
 import pytest
 
-from ragu.models.decision_client import (
-    HTTPDecisionClient,
-    LocalDecisionClient,
-)
+from ragu.models.decision_client import HTTPDecisionClient
 
 
 def make_request():
@@ -83,41 +80,6 @@ async def test_http_client_supports_frida_vllm_envelope():
         "model": "ai-forever/FRIDA-Decisions",
         "data": request_data,
     }
-
-
-async def test_local_client_supports_async_judge():
-    response_data = make_response()
-
-    class AsyncJudge:
-        async def judge(self, request):
-            assert request == make_request()
-            return response_data
-
-    client = LocalDecisionClient(AsyncJudge())
-
-    assert await client.decide(make_request()) == response_data
-
-
-async def test_local_client_supports_sync_callable_judge():
-    response_data = make_response()
-
-    class SyncJudge:
-        def __call__(self, request):
-            assert request == make_request()
-            return response_data
-
-    client = LocalDecisionClient(SyncJudge())
-
-    assert await client.decide(make_request()) == response_data
-
-
-async def test_local_client_rejects_invalid_judge_and_response():
-    with pytest.raises(TypeError, match="judge must be callable"):
-        LocalDecisionClient(object())
-
-    client = LocalDecisionClient(lambda request: ["invalid"])
-    with pytest.raises(TypeError, match="must return a dictionary"):
-        await client.decide(make_request())
 
 
 async def test_http_client_validates_json_response():

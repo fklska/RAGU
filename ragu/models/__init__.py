@@ -2,7 +2,6 @@ from ragu.models.caching import ResponseCachingMixin
 from ragu.models.decision_client import (
     DecisionClient,
     HTTPDecisionClient,
-    LocalDecisionClient,
 )
 from ragu.models.embedder import Embedder, EmbedderOpenAI
 from ragu.models.llm import LLM, LLMOpenAI
@@ -17,7 +16,6 @@ __all__ = [
     'EmbedderOpenAI',
     'HTTPDecisionClient',
     'LLMOpenAI',
-    'LocalDecisionClient',
     'ResponseCachingMixin',
     'Scorer',
     'ScorerOpenAI',

@@ -89,7 +89,7 @@ class FridaEntityDecider(EntityDecider):
         question per candidate. Candidates with probability greater than or
         equal to ``threshold`` are accepted.
 
-        :param decider_client: Local or HTTP structured decision client.
+        :param decider_client: HTTP structured decision client.
         :param threshold: Minimum probability of the affirmative answer.
         """
         if not 0.0 <= threshold <= 1.0:

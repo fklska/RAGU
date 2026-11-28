@@ -1,5 +1,3 @@
-import asyncio
-import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, TypeAlias
@@ -14,7 +12,6 @@ __all__ = [
     "DecisionRequest",
     "DecisionResponse",
     "HTTPDecisionClient",
-    "LocalDecisionClient",
 ]
 
 
@@ -86,33 +83,3 @@ class HTTPDecisionClient(DecisionClient):
     async def close(self) -> None:
         if self._owns_client:
             await self._client.aclose()
-
-
-class LocalDecisionClient(DecisionClient):
-    def __init__(self, judge: Any):
-        """
-        Adapt a local decision model.
-
-        The model can be a callable, such as FRIDA ``Judge``, or expose a
-        synchronous/asynchronous ``judge(request)`` method, such as ``AsyncJudge``.
-        Synchronous inference runs in a worker thread.
-
-        :param judge: Local decision model instance.
-        """
-        method = getattr(judge, "judge", None)
-        if method is None and callable(judge):
-            method = judge
-        if not callable(method):
-            raise TypeError("judge must be callable or expose judge(request)")
-        self._method = method
-
-    async def decide(self, request: DecisionRequest) -> DecisionResponse:
-        if inspect.iscoroutinefunction(self._method):
-            result = await self._method(request)
-        else:
-            result = await asyncio.to_thread(self._method, request)
-            if inspect.isawaitable(result):
-                result = await result
-        if not isinstance(result, dict):
-            raise TypeError("Local decision model must return a dictionary")
-        return result
