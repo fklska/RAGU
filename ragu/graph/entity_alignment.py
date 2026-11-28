@@ -21,7 +21,7 @@ class AlignmentReport:
     merged_components: int = 0
     rewritten_relations: int = 0
     dropped_self_loops: int = 0
-    llm_calls: int = 0
+    decision_calls: int = 0
 
 
 class _UnionFind:
@@ -131,7 +131,7 @@ class EntityAligner(GraphBuilderModule):
             candidates = candidates_by_index[index]
             if not candidates:
                 continue
-            report.llm_calls += 1
+            report.decision_calls += 1
             decisions = await self.decider.decide(entity, candidates)
             allowed_ids = {candidate.id for candidate in candidates}
             for decision in decisions:
